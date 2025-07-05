@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Proses Pesanan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fef9f4;
+            color: #4b2e2e;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .processing-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #8b5c3c;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: #d9534f;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="processing-container">
+        <h2>Memproses Pesanan Anda...</h2>
+        <div class="spinner"></div>
+        <p id="status-message">Validasi data pesanan...</p>
+        <p id="error-message" class="error-message"></p>
+    </div>
+
+    <script>
+        // Simulate order processing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get order data from localStorage (set by the order form)
+            const orderData = JSON.parse(localStorage.getItem('orderData') || '{}');
+            const csrfToken = localStorage.getItem('csrfToken');
+            
+            // Simulate server-side processing with delays
+            setTimeout(() => {
+                document.getElementById('status-message').textContent = 'Memverifikasi CSRF token...';
+                
+                // 1. Validate request method (simulated)
+                if (!orderData) {
+                    showError("Invalid request data");
+                    return;
+                }
+                
+                // 2. Validate CSRF token
+                if (!csrfToken || csrfToken !== orderData.csrfToken) {
+                    showError("Invalid CSRF token");
+                    return;
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('status-message').textContent = 'Memvalidasi input...';
+                    
+                    // 3. Validate required fields
+                    if (!orderData.nama_pelanggan || !orderData.menu_id || !orderData.jumlah) {
+                        showError("Semua field harus diisi");
+                        return;
+                    }
+                    
+                    // 4. Sanitize and validate values
+                    const jumlah = parseInt(orderData.jumlah);
+                    const menu_id = parseInt(orderData.menu_id);
+                    
+                    if (isNaN(menu_id) || isNaN(jumlah) || menu_id <= 0 || jumlah <= 0) {
+                        showError("Input tidak valid");
+                        return;
+                    }
+                    
+                    setTimeout(() => {
+                        document.getElementById('status-message').textContent = 'Menghitung total harga...';
+                        
+                        // 5. Get menu price (simulated)
+                        const menuPrices = {
+                            '1': 5000,
+                            '2': 8000,
+                            '3': 10000,
+                            '4': 12000
+                        };
+                        
+                        if (!menuPrices[menu_id]) {
+                            showError("Menu tidak ditemukan");
+                            return;
+                        }
+                        
+                        const total_harga = menuPrices[menu_id] * jumlah;
+                        
+                        setTimeout(() => {
+                            document.getElementById('status-message').textContent = 'Menyimpan pesanan...';
+                            
+                            // 6. Simulate saving order
+                            try {
+                                // Generate new CSRF token for next request
+                                const newCsrfToken = generateCsrfToken();
+                                localStorage.setItem('csrfToken', newCsrfToken);
+                                
+                                // Save order data for success page
+                                const successData = {
+                                    nama: orderData.nama_pelanggan,
+                                    total: total_harga
+                                };
+                                localStorage.setItem('orderSuccessData', JSON.stringify(successData));
+                                
+                                // Redirect to success page after short delay
+                                setTimeout(() => {
+                                    window.location.href = 'order_success.html';
+                                }, 500);
+                                
+                            } catch (e) {
+                                showError("Gagal menyimpan pesanan");
+                            }
+                            
+                        }, 800);
+                    }, 800);
+                }, 800);
+            }, 800);
+        });
+        
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('status-message').textContent = 'Proses pesanan gagal';
+            document.querySelector('.spinner').style.display = 'none';
+            
+            // Optionally add a button to go back
+            const backButton = document.createElement('button');
+            backButton.textContent = 'Kembali ke Form Pesanan';
+            backButton.style.marginTop = '1rem';
+            backButton.style.padding = '0.5rem 1rem';
+            backButton.style.backgroundColor = '#8b5c3c';
+            backButton.style.color = 'white';
+            backButton.style.border = 'none';
+            backButton.style.borderRadius = '4px';
+            backButton.style.cursor = 'pointer';
+            backButton.onclick = function() {
+                window.location.href = 'order.html';
+            };
+            
+            document.querySelector('.processing-container').appendChild(backButton);
+        }
+        
+        function generateCsrfToken() {
+            // Simple CSRF token generator for demo purposes
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    </script>
+</body>
+</html>
